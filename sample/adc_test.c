@@ -3,7 +3,6 @@
 */
 #include <core.h>
 int adc_id = 0;
-int delay_us = 100000;
 
 void setup()
 {
@@ -23,5 +22,5 @@ void loop()
 
     printf("ADC%d level is %d\n",adc_id, value);
 
-    delayMicroseconds(delay_us);  
+    delay(1000);
 }

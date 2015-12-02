@@ -19,7 +19,6 @@ extern "C" {
 }
 #include "Arduino.h"
 #include "Wire.h"
-#include <linux/i2c.h>
 #include <linux/i2c-dev.h>
 
 #define I2CCLOCK_CHANGE 0x0740

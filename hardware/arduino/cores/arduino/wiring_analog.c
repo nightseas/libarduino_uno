@@ -1,6 +1,12 @@
 #include "Arduino.h"
 #include "wiring_private.h"
 #include <linux/spi/spidev.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <fcntl.h>
+#include <sys/ioctl.h>
+#include <linux/i2c-dev.h>
+
 
 static const char *pwm_dev = "/dev/pwmtimer";
 static const char *spi1_dev = "/dev/spidev1.0";
@@ -36,6 +42,32 @@ void analogReference(uint8_t mode)
 {
     analog_reference = mode;
 }
+
+#define I2C_ADC_ADDR  0x22
+
+int i2c_adc_handle = 0, adc_result = 0;
+
+//Added for UNO by Nightmare.
+static int i2c_adc_read_data(int channel)
+{
+    if(!i2c_adc_handle){
+        if ((i2c_adc_handle = open("/dev/i2c-1", O_RDWR)) < 0) 
+            pabort("can't open device /dev/i2c-1");   
+    }
+    // 7 bits address 
+    if (ioctl(i2c_adc_handle, I2C_TENBIT, 0) < 0) 
+        pabort("Set I2C 7-bits addres flag failed");
+    if (ioctl(i2c_adc_handle, I2C_SLAVE, I2C_ADC_ADDR) < 0) 
+        pabort("Set I2C slave addres failed");
+
+    int adc_cmd = ((channel<<4) + 0x80) & 0xFF;
+
+    adc_result = i2c_smbus_read_word_data(i2c_adc_handle, adc_cmd);
+    adc_result = ((adc_result>>8) & 0xFF) + ((adc_result<<8) & 0xFF00);
+    printf("i2c_adc_read_data<ch%d>=0x%03X, adc conversion cmd = 0x%02X\n", channel, adc_result, adc_cmd);
+    return (adc_result & 0x3FF);    
+}
+
 
 static int spi_adc_read_data(int channel)
 {
@@ -125,20 +157,7 @@ int analogRead(uint8_t pin)
         
     if ( pin >= 0 && pin <= 5 )
     {
-        memset(buf, 0, sizeof(buf));
-        lseek(adc_fd[pin], 0, SEEK_SET);
-        ret = read(adc_fd[pin], buf, sizeof(buf));
-        
-        if ( ret <= 0 )
-        {
-            fprintf(stderr, "read adc %d failed\n", pin);
-            exit(-1);
-        }
-
-        memset((void *)str, 0, sizeof(str));
-        sprintf(str, "adc%d", pin);
-        p = strstr(buf, str) + strlen(str) + 1;
-        sscanf(p, "%d", &ret);
+        ret = i2c_adc_read_data(pin);
     }
     else if ( pin >= 6 && pin <= MAX_ADC_NUM )
     {
