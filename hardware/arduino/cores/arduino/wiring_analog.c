@@ -64,7 +64,7 @@ static int i2c_adc_read_data(int channel)
 
     adc_result = i2c_smbus_read_word_data(i2c_adc_handle, adc_cmd);
     adc_result = ((adc_result>>8) & 0xFF) + ((adc_result<<8) & 0xFF00);
-    printf("i2c_adc_read_data<ch%d>=0x%03X, adc conversion cmd = 0x%02X\n", channel, adc_result, adc_cmd);
+    //printf("i2c_adc_read_data<ch%d>=0x%03X, adc conversion cmd = 0x%02X\n", channel, adc_result, adc_cmd);
     return (adc_result & 0x3FF);    
 }
 
